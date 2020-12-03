@@ -19,6 +19,12 @@ MAX30105 particleSensor;
 void setup()
 {
   debug.begin(9600);
+  while(!Serial.available())
+  {
+    Serial.println("Enter a character to continue");
+    delay(500);
+  }
+  Serial.read();
   debug.println("EmotiBit MAX30101 Basic Readings Example");
   pinMode(6, OUTPUT);
   digitalWrite(6, LOW);
@@ -38,13 +44,13 @@ void setup()
 
 void loop()
 {
-  debug.print(" R[");
-  debug.print(particleSensor.getRed());
-  debug.print("] IR[");
-  debug.print(particleSensor.getIR());
-  debug.print("] G[");
-  debug.print(particleSensor.getGreen());
-  debug.print("]");
+  //debug.print(" R[");
+  debug.print(particleSensor.getRed()); Serial.print("\t");
+  //debug.print("] IR[");
+  debug.print(particleSensor.getIR()); Serial.println();
+  //debug.print("] G[");
+  //debug.print(particleSensor.getGreen());
+  //debug.print("]");
 
   debug.println();
 }
