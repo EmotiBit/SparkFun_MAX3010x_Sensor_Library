@@ -19,12 +19,7 @@ MAX30105 particleSensor;
 void setup()
 {
   debug.begin(9600);
-  while(!Serial.available())
-  {
-    Serial.println("Enter a character to continue");
-    delay(500);
-  }
-  Serial.read();
+  while(!Serial);
   debug.println("EmotiBit MAX30101 Basic Readings Example");
   pinMode(6, OUTPUT);
   digitalWrite(6, LOW);
@@ -32,13 +27,18 @@ void setup()
   pinPeripheral(11, PIO_SERCOM);
   pinPeripheral(13, PIO_SERCOM);
   myWire.setClock(100000);
+  Serial.println("Trying to connect to the sensor on I2C line");
   // Initialize sensor
   if (particleSensor.begin(myWire) == false)
   {
     debug.println("MAX30105 was not found. Please check wiring/power. ");
     while (1);
   }
-
+  else
+  {
+    debug.println("SUCCESS!");
+    //debug.println("open the Arduino Serial Plotter to view data plotted on screen");
+  }
   particleSensor.setup(); //Configure sensor. Use 6.4mA for LED drive
 }
 
@@ -47,7 +47,7 @@ void loop()
   //debug.print(" R[");
   debug.print(particleSensor.getRed()); Serial.print("\t");
   //debug.print("] IR[");
-  debug.print(particleSensor.getIR()); Serial.println();
+  debug.print(particleSensor.getIR());
   //debug.print("] G[");
   //debug.print(particleSensor.getGreen());
   //debug.print("]");
