@@ -31,6 +31,7 @@ void setup()
   // Initialize sensor
   if (particleSensor.begin(myWire) == false)
   {
+    debug.println("FAILURE");
     debug.println("MAX30105 was not found. Please check wiring/power. ");
     while (1);
   }
