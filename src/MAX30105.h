@@ -114,16 +114,21 @@ class MAX30105 {
   void setPROXINTTHRESH(uint8_t val);
 
   // Die Temperature
-
+  /*!
+		@brief sets the register to start a temperature measurement
+			Important to call this function before getTemperature is called
+  */
+  void startTempMeasurement();
+  
   /*!
 		@brief returns PPG die temerature if conversion is conplete
 				Note: it is necessary to call ienableDIETEMPRDY() to enable temp measurements
-		@param temperature die temperature
-		@return true is temperature succesfully read, else false
+		@param temperature measured die temperature
+		@return true if temperature measurement ready, else false
   */
-  bool readTemperatureAsync(float& temperature);
+  bool getTemperature(float& temperature);
   float readTemperature(bool isAsync = false);
-  bool readTemperatureFAsync(float& temperature);
+  bool getTemperatureF(float& temperature);
   float readTemperatureF();
 
   // Detecting ID/Revision

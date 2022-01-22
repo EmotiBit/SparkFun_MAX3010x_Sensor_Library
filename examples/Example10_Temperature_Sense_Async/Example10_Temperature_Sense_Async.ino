@@ -31,6 +31,7 @@ TwoWire* emotibitI2c;
 char input = 'a';
 uint32_t currentPrintTime;
 uint32_t lastPrintTime;
+bool firstTime = true;
 
 void setup()
 {
@@ -93,14 +94,20 @@ void loop()
 	}
 	if (input == 'a')
 	{
+		if (firstTime)
+		{
+			particleSensor.startTempMeasurement();
+			firstTime = false;
+		}
 		float temperature = 0;
-		if (particleSensor.readTemperatureAsync(temperature)) // call readTemperatureFAsync for fahrenheit
+		if (particleSensor.getTemperature(temperature)) // call readTemperatureFAsync for fahrenheit
 		{
 			currentPrintTime = millis();
 			Serial.print("[Async] [Time: " + String(currentPrintTime) + "]" + "[time since last measurement: " + String(currentPrintTime - lastPrintTime) + "] ");
 			Serial.print("temperature: ");
 			Serial.println(temperature,4);
 			lastPrintTime = currentPrintTime;
+			particleSensor.startTempMeasurement();
 		}
 		else
 		{
@@ -110,6 +117,7 @@ void loop()
 	}
 	else if(input == 's')
 	{
+		firstTime = true; // resetting incase we switch back to async measurement
 		float temperature = particleSensor.readTemperature();// call readTemperatureF for fahrenheit
 		
 		currentPrintTime = millis();

@@ -361,34 +361,25 @@ uint8_t MAX30105::getReadPointer(void) {
 }
 
 
-bool MAX30105::readTemperatureAsync(float& temperature)
+void MAX30105::startTempMeasurement()
 {
-	uint8_t isBusy = readRegister8(_i2caddr, MAX30105_DIETEMPCONFIG);
-	if (isBusy & 0x01)
+	// setting appropriate bit to start temp measurement
+	writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);
+}
+
+bool MAX30105::getTemperature(float& temperature)
+{
+	uint8_t isTempMeasurementReady = readRegister8(_i2caddr, MAX30105_INTSTAT2);
+	if (isTempMeasurementReady & MAX30105_INT_DIE_TEMP_RDY_ENABLE)
 	{
-		// busy taking measurement
-		return false;
+		// temp measurement available!
+		temperature = readTemperature(true);
+		return true;
 	}
 	else
 	{
-		uint8_t isTempMeasurementReady = readRegister8(_i2caddr, MAX30105_INTSTAT2);
-		if (isTempMeasurementReady & MAX30105_INT_DIE_TEMP_RDY_ENABLE)
-		{
-			// temp measurement available!
-			temperature = readTemperature(true);
-
-			// start another measurement
-			writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);
-			return true;
-		}
-		else
-		{
-			// not busy converting and no measurement read = first time reading temp
-			// start temp measurement
-			writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);
-			return false;
-		}
-
+		// busy converting
+		return false;
 	}
 }
 
@@ -431,10 +422,10 @@ float MAX30105::readTemperature(bool isAsync) {
 }
 
 // Returns die temp in F Asynchronously
-bool MAX30105::readTemperatureFAsync(float& temperature)
+bool MAX30105::getTemperatureF(float& temperature)
 {
 	float temp;
-	if (!readTemperatureAsync(temp))
+	if (!getTemperature(temp))
 	{
 		return false;
 	}
