@@ -430,7 +430,7 @@ bool MAX30105::getTemperatureF(float& temperature)
 		return false;
 	}
 	
-	if (temp != -999.0) temp = temp * 1.8 + 32.0;
+	temp = temp * 1.8 + 32.0;
 	temperature = temp;
 	return true;
 }
