@@ -361,29 +361,48 @@ uint8_t MAX30105::getReadPointer(void) {
 }
 
 
+void MAX30105::startTempMeasurement() {
+	// setting appropriate bit to start temp measurement
+	writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);
+}
+
+bool MAX30105::getTemperature(float& temperature) {
+	uint8_t isTempMeasurementReady = readRegister8(_i2caddr, MAX30105_INTSTAT2);
+	if (isTempMeasurementReady & MAX30105_INT_DIE_TEMP_RDY_ENABLE) {
+		// temp measurement available!
+		temperature = readTemperature(true);
+		return true;
+	}
+	else {
+		// busy converting
+		return false;
+	}
+}
+
 // Die Temperature
 // Returns temp in C
-float MAX30105::readTemperature() {
+float MAX30105::readTemperature(bool isAsync) {
 	
   //DIE_TEMP_RDY interrupt must be enabled
   //See issue 19: https://github.com/sparkfun/SparkFun_MAX3010x_Sensor_Library/issues/19
-  
-  // Step 1: Config die temperature register to take 1 temperature sample
-  writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);
+	if (!isAsync) {
+		// Step 1: Config die temperature register to take 1 temperature sample
+		writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);
+	}
+	if (!isAsync) {
+		// Poll for bit to clear, reading is then complete
+		// Timeout after 100ms
+		unsigned long startTime = millis();
+		while (millis() - startTime < 100) {
+			//uint8_t response = readRegister8(_i2caddr, MAX30105_DIETEMPCONFIG); //Original way
+			//if ((response & 0x01) == 0) break; //We're done!
 
-  // Poll for bit to clear, reading is then complete
-  // Timeout after 100ms
-  unsigned long startTime = millis();
-  while (millis() - startTime < 100)
-  {
-    //uint8_t response = readRegister8(_i2caddr, MAX30105_DIETEMPCONFIG); //Original way
-    //if ((response & 0x01) == 0) break; //We're done!
-    
-	//Check to see if DIE_TEMP_RDY interrupt is set
-	uint8_t response = readRegister8(_i2caddr, MAX30105_INTSTAT2);
-    if ((response & MAX30105_INT_DIE_TEMP_RDY_ENABLE) > 0) break; //We're done!
-    delay(1); //Let's not over burden the I2C bus
-  }
+			//Check to see if DIE_TEMP_RDY interrupt is set
+			uint8_t response = readRegister8(_i2caddr, MAX30105_INTSTAT2);
+			if ((response & MAX30105_INT_DIE_TEMP_RDY_ENABLE) > 0) break; //We're done!
+			delay(1); //Let's not over burden the I2C bus
+		}
+	}
   //TODO How do we want to fail? With what type of error?
   //? if(millis() - startTime >= 100) return(-999.0);
 
@@ -393,6 +412,18 @@ float MAX30105::readTemperature() {
 
   // Step 3: Calculate temperature (datasheet pg. 23)
   return (float)tempInt + ((float)tempFrac * 0.0625);
+}
+
+// Returns die temp in F Asynchronously
+bool MAX30105::getTemperatureF(float& temperature) {
+	float temp;
+	if (!getTemperature(temp)) {
+		return false;
+	}
+	
+	temp = temp * 1.8 + 32.0;
+	temperature = temp;
+	return true;
 }
 
 // Returns die temp in F
