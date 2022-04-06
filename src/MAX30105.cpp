@@ -14,23 +14,25 @@
 // Status Registers
 static const uint8_t MAX30105_INTSTAT1 =		0x00;
 static const uint8_t MAX30105_INTSTAT2 =		0x01;
-static const uint8_t MAX30105_INTENABLE1 =		0x02;
+static const uint8_t MAX30105_INTENABLE1 =		0x01;
 static const uint8_t MAX30105_INTENABLE2 =		0x03;
 
 // FIFO Registers
-static const uint8_t MAX30105_FIFOWRITEPTR = 	0x04;
-static const uint8_t MAX30105_FIFOOVERFLOW = 	0x05;
-static const uint8_t MAX30105_FIFOREADPTR = 	0x06;
-static const uint8_t MAX30105_FIFODATA =		0x07;
+static const uint8_t MAX30105_FIFOWRITEPTR = 	0x02;
+static const uint8_t MAX30105_FIFOOVERFLOW = 	0x03;
+static const uint8_t MAX30105_FIFOREADPTR = 	0x04;
+static const uint8_t MAX30105_FIFODATA =		0x05;
 
 // Configuration Registers
 static const uint8_t MAX30105_FIFOCONFIG = 		0x08;
-static const uint8_t MAX30105_MODECONFIG = 		0x09;
-static const uint8_t MAX30105_PARTICLECONFIG = 	0x0A;    // Note, sometimes listed as "SPO2" config in datasheet (pg. 11)
-static const uint8_t MAX30105_LED1_PULSEAMP = 	0x0C;
-static const uint8_t MAX30105_LED2_PULSEAMP = 	0x0D;
-static const uint8_t MAX30105_LED3_PULSEAMP = 	0x0E;
-static const uint8_t MAX30105_LED_PROX_AMP = 	0x10;
+static const uint8_t MAX30105_MODECONFIG = 		0x06;
+static const uint8_t MAX30105_PARTICLECONFIG = 	0x07;    // Note, sometimes listed as "SPO2" config in datasheet (pg. 11)
+// The below number should be replaced by LED CONFIG register
+//static const uint8_t MAX30105_LED1_PULSEAMP = 	0x0C;
+//static const uint8_t MAX30105_LED2_PULSEAMP = 	0x0D;
+//static const uint8_t MAX30105_LED3_PULSEAMP = 	0x0E;
+//static const uint8_t MAX30105_LED_PROX_AMP = 	0x10;
+static const uint8_t MAX30105_LED_CONFIG = 0x09;
 static const uint8_t MAX30105_MULTILEDCONFIG1 = 0x11;
 static const uint8_t MAX30105_MULTILEDCONFIG2 = 0x12;
 
@@ -53,7 +55,7 @@ static const uint8_t MAX30105_INT_A_FULL_ENABLE = 	0x80;
 static const uint8_t MAX30105_INT_A_FULL_DISABLE = 	0x00;
 
 static const uint8_t MAX30105_INT_DATA_RDY_MASK = (byte)~0b01000000;
-static const uint8_t MAX30105_INT_DATA_RDY_ENABLE =	0x40;
+static const uint8_t MAX30105_INT_DATA_RDY_ENABLE =	0x20; // changed from 0x04
 static const uint8_t MAX30105_INT_DATA_RDY_DISABLE = 0x00;
 
 static const uint8_t MAX30105_INT_ALC_OVF_MASK = (byte)~0b00100000;
@@ -64,8 +66,8 @@ static const uint8_t MAX30105_INT_PROX_INT_MASK = (byte)~0b00010000;
 static const uint8_t MAX30105_INT_PROX_INT_ENABLE = 0x10;
 static const uint8_t MAX30105_INT_PROX_INT_DISABLE = 0x00;
 
-static const uint8_t MAX30105_INT_DIE_TEMP_RDY_MASK = (byte)~0b00000010;
-static const uint8_t MAX30105_INT_DIE_TEMP_RDY_ENABLE = 0x02;
+static const uint8_t MAX30105_INT_DIE_TEMP_RDY_MASK = (byte)~0b01000000;
+static const uint8_t MAX30105_INT_DIE_TEMP_RDY_ENABLE = 0x40;  // changed from 0x02
 static const uint8_t MAX30105_INT_DIE_TEMP_RDY_DISABLE = 0x00;
 
 static const uint8_t MAX30105_SAMPLEAVG_MASK =	(byte)~0b11100000;
@@ -96,21 +98,25 @@ static const uint8_t MAX30105_MODE_REDIRONLY = 	0x03;
 static const uint8_t MAX30105_MODE_MULTILED = 	0x07;
 
 // Particle sensing configuration commands (pgs 19-20)
-static const uint8_t MAX30105_ADCRANGE_MASK = 	0x9F;
+
+static const uint8_t MAX30105_ADCRANGE_MASK = 	0xBF;
+/*
 static const uint8_t MAX30105_ADCRANGE_2048 = 	0x00;
 static const uint8_t MAX30105_ADCRANGE_4096 = 	0x20;
 static const uint8_t MAX30105_ADCRANGE_8192 = 	0x40;
 static const uint8_t MAX30105_ADCRANGE_16384 = 	0x60;
+*/
+
 
 static const uint8_t MAX30105_SAMPLERATE_MASK = 0xE3;
 static const uint8_t MAX30105_SAMPLERATE_50 = 	0x00;
 static const uint8_t MAX30105_SAMPLERATE_100 = 	0x04;
-static const uint8_t MAX30105_SAMPLERATE_200 = 	0x08;
-static const uint8_t MAX30105_SAMPLERATE_400 = 	0x0C;
-static const uint8_t MAX30105_SAMPLERATE_800 = 	0x10;
-static const uint8_t MAX30105_SAMPLERATE_1000 = 0x14;
-static const uint8_t MAX30105_SAMPLERATE_1600 = 0x18;
-static const uint8_t MAX30105_SAMPLERATE_3200 = 0x1C;
+static const uint8_t MAX30105_SAMPLERATE_167 = 	0x08;
+static const uint8_t MAX30105_SAMPLERATE_200 = 	0x0C;
+static const uint8_t MAX30105_SAMPLERATE_400 = 	0x10;
+static const uint8_t MAX30105_SAMPLERATE_600 = 0x14;
+static const uint8_t MAX30105_SAMPLERATE_800 = 0x18;
+static const uint8_t MAX30105_SAMPLERATE_1000 = 0x1C; // maxes out at 1000 for max30100
 
 static const uint8_t MAX30105_PULSEWIDTH_MASK = 0xFC;
 static const uint8_t MAX30105_PULSEWIDTH_69 = 	0x00;
@@ -133,7 +139,7 @@ static const uint8_t SLOT_RED_PILOT =			0x05;
 static const uint8_t SLOT_IR_PILOT = 			0x06;
 static const uint8_t SLOT_GREEN_PILOT = 		0x07;
 
-static const uint8_t MAX_30105_EXPECTEDPARTID = 0x15;
+static const uint8_t MAX_30105_EXPECTEDPARTID = 0x11; // 0x15 for MAX30101/MAX30102
 
 MAX30105::MAX30105() {
   // Constructor
@@ -258,15 +264,17 @@ void MAX30105::setPulseWidth(uint8_t pulseWidth) {
   bitMask(MAX30105_PARTICLECONFIG, MAX30105_PULSEWIDTH_MASK, pulseWidth);
 }
 
+
 // NOTE: Amplitude values: 0x00 = 0mA, 0x7F = 25.4mA, 0xFF = 50mA (typical)
 // See datasheet, page 21
 void MAX30105::setPulseAmplitudeRed(uint8_t amplitude) {
-  writeRegister8(_i2caddr, MAX30105_LED1_PULSEAMP, amplitude);
+  writeRegister8(_i2caddr, MAX30105_LED_CONFIG, amplitude);
+}
+/*
+void MAX30105::setPulseAmplitudeIR(uint8_t amplitude) {
+  writeRegister8(_i2caddr, MAX30105_LED_CONFIG, amplitude);
 }
 
-void MAX30105::setPulseAmplitudeIR(uint8_t amplitude) {
-  writeRegister8(_i2caddr, MAX30105_LED2_PULSEAMP, amplitude);
-}
 
 void MAX30105::setPulseAmplitudeGreen(uint8_t amplitude) {
   writeRegister8(_i2caddr, MAX30105_LED3_PULSEAMP, amplitude);
@@ -275,7 +283,7 @@ void MAX30105::setPulseAmplitudeGreen(uint8_t amplitude) {
 void MAX30105::setPulseAmplitudeProximity(uint8_t amplitude) {
   writeRegister8(_i2caddr, MAX30105_LED_PROX_AMP, amplitude);
 }
-
+*/
 void MAX30105::setProximityThreshold(uint8_t threshMSB) {
   // Set the IR ADC count that will trigger the beginning of particle-sensing mode.
   // The threshMSB signifies only the 8 most significant-bits of the ADC count.
@@ -287,6 +295,7 @@ void MAX30105::setProximityThreshold(uint8_t threshMSB) {
 //Devices are SLOT_RED_LED or SLOT_RED_PILOT (proximity)
 //Assigning a SLOT_RED_LED will pulse LED
 //Assigning a SLOT_RED_PILOT will ??
+
 void MAX30105::enableSlot(uint8_t slotNumber, uint8_t device) {
 
   uint8_t originalContents;
@@ -319,12 +328,12 @@ void MAX30105::disableSlots(void) {
 //
 // FIFO Configuration
 //
-
+/*
 //Set sample average (Table 3, Page 18)
 void MAX30105::setFIFOAverage(uint8_t numberOfSamples) {
   bitMask(MAX30105_FIFOCONFIG, MAX30105_SAMPLEAVG_MASK, numberOfSamples);
 }
-
+*/
 //Resets all points to start in a known state
 //Page 15 recommends clearing FIFO before beginning a read
 void MAX30105::clearFIFO(void) {
@@ -333,10 +342,12 @@ void MAX30105::clearFIFO(void) {
   writeRegister8(_i2caddr, MAX30105_FIFOREADPTR, 0);
 }
 
+/*
 //Enable roll over if FIFO over flows
 void MAX30105::enableFIFORollover(void) {
   bitMask(MAX30105_FIFOCONFIG, MAX30105_ROLLOVER_MASK, MAX30105_ROLLOVER_ENABLE);
 }
+*/
 
 //Disable roll over if FIFO over flows
 void MAX30105::disableFIFORollover(void) {
@@ -467,6 +478,7 @@ uint8_t MAX30105::getRevisionID() {
 void MAX30105::setup(byte powerLevel, byte sampleAverage, byte ledMode, int sampleRate, int pulseWidth, int adcRange) {
   softReset(); //Reset all configuration, threshold, and data registers to POR values
 
+  /*
   //FIFO Configuration
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   //The chip will average multiple samples of same type together if you wish
@@ -477,9 +489,10 @@ void MAX30105::setup(byte powerLevel, byte sampleAverage, byte ledMode, int samp
   else if (sampleAverage == 16) setFIFOAverage(MAX30105_SAMPLEAVG_16);
   else if (sampleAverage == 32) setFIFOAverage(MAX30105_SAMPLEAVG_32);
   else setFIFOAverage(MAX30105_SAMPLEAVG_4);
-
+  */
+  
   //setFIFOAlmostFull(2); //Set to 30 samples to trigger an 'Almost Full' interrupt
-  enableFIFORollover(); //Allow FIFO to wrap/roll over
+  //enableFIFORollover(); //Allow FIFO to wrap/roll over
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   //Mode Configuration
@@ -492,20 +505,23 @@ void MAX30105::setup(byte powerLevel, byte sampleAverage, byte ledMode, int samp
 
   //Particle Sensing Configuration
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*
   if(adcRange < 4096) setADCRange(MAX30105_ADCRANGE_2048); //7.81pA per LSB
   else if(adcRange < 8192) setADCRange(MAX30105_ADCRANGE_4096); //15.63pA per LSB
   else if(adcRange < 16384) setADCRange(MAX30105_ADCRANGE_8192); //31.25pA per LSB
   else if(adcRange == 16384) setADCRange(MAX30105_ADCRANGE_16384); //62.5pA per LSB
   else setADCRange(MAX30105_ADCRANGE_2048);
+  */
+  setADCRange(0x40); // sets the SPO2 HI res OM
 
   if (sampleRate < 100) setSampleRate(MAX30105_SAMPLERATE_50); //Take 50 samples per second
   else if (sampleRate < 200) setSampleRate(MAX30105_SAMPLERATE_100);
-  else if (sampleRate < 400) setSampleRate(MAX30105_SAMPLERATE_200);
-  else if (sampleRate < 800) setSampleRate(MAX30105_SAMPLERATE_400);
-  else if (sampleRate < 1000) setSampleRate(MAX30105_SAMPLERATE_800);
-  else if (sampleRate < 1600) setSampleRate(MAX30105_SAMPLERATE_1000);
-  else if (sampleRate < 3200) setSampleRate(MAX30105_SAMPLERATE_1600);
-  else if (sampleRate == 3200) setSampleRate(MAX30105_SAMPLERATE_3200);
+  else if (sampleRate < 400) setSampleRate(MAX30105_SAMPLERATE_167);
+  else if (sampleRate < 800) setSampleRate(MAX30105_SAMPLERATE_200);
+  else if (sampleRate < 1000) setSampleRate(MAX30105_SAMPLERATE_400);
+  else if (sampleRate < 1600) setSampleRate(MAX30105_SAMPLERATE_600);
+  else if (sampleRate < 3200) setSampleRate(MAX30105_SAMPLERATE_800);
+  else if (sampleRate == 3200) setSampleRate(MAX30105_SAMPLERATE_1000);
   else setSampleRate(MAX30105_SAMPLERATE_50);
 
   //The longer the pulse width the longer range of detection you'll have
@@ -526,17 +542,18 @@ void MAX30105::setup(byte powerLevel, byte sampleAverage, byte ledMode, int samp
   //powerLevel = 0x7F, 25.4mA - Presence detection of ~8 inch
   //powerLevel = 0xFF, 50.0mA - Presence detection of ~12 inch
 
+
   setPulseAmplitudeRed(powerLevel);
-  setPulseAmplitudeIR(powerLevel);
-  setPulseAmplitudeGreen(powerLevel);
-  setPulseAmplitudeProximity(powerLevel);
+  //setPulseAmplitudeIR(powerLevel);
+  //setPulseAmplitudeGreen(powerLevel);
+  //setPulseAmplitudeProximity(powerLevel);
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   //Multi-LED Mode Configuration, Enable the reading of the three LEDs
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  enableSlot(1, SLOT_RED_LED);
-  if (ledMode > 1) enableSlot(2, SLOT_IR_LED);
-  if (ledMode > 2) enableSlot(3, SLOT_GREEN_LED);
+  //enableSlot(1, SLOT_RED_LED);
+  //if (ledMode > 1) enableSlot(2, SLOT_IR_LED);
+  //if (ledMode > 2) enableSlot(3, SLOT_GREEN_LED);
   //enableSlot(1, SLOT_RED_PILOT);
   //enableSlot(2, SLOT_IR_PILOT);
   //enableSlot(3, SLOT_GREEN_PILOT);
@@ -635,11 +652,11 @@ uint16_t MAX30105::check(void)
   {
     //Calculate the number of readings we need to get from sensor
     numberOfSamples = writePointer - readPointer;
-    if (numberOfSamples < 0) numberOfSamples += 32; //Wrap condition
+    if (numberOfSamples < 0) numberOfSamples += 16; //Wrap condition
 
     //We now have the number of readings, now calc bytes to read
     //For this example we are just doing Red and IR (3 bytes each)
-    int bytesLeftToRead = numberOfSamples * activeLEDs * 3;
+    int bytesLeftToRead = numberOfSamples * activeLEDs * 2; // MAX30100: 2 bytes per sample per channel
 
     //Get ready to read a burst of data from the FIFO register
     _i2cPort->beginTransmission(MAX30105_ADDRESS);
@@ -658,7 +675,7 @@ uint16_t MAX30105::check(void)
         //32 % 6 = 2 left over. We don't want to request 32 bytes, we want to request 30.
         //32 % 9 (Red+IR+GREEN) = 5 left over. We want to request 27.
 
-        toGet = I2C_BUFFER_LENGTH - (I2C_BUFFER_LENGTH % (activeLEDs * 3)); //Trim toGet to be a multiple of the samples we need to read
+        toGet = I2C_BUFFER_LENGTH - (I2C_BUFFER_LENGTH % (activeLEDs * 2)); //Trim toGet to be a multiple of the samples we need to read
       }
 
       bytesLeftToRead -= toGet;
@@ -671,34 +688,34 @@ uint16_t MAX30105::check(void)
         sense.head++; //Advance the head of the storage struct
         sense.head %= STORAGE_SIZE; //Wrap condition
 
-        byte temp[sizeof(uint32_t)]; //Array of 4 bytes that we will convert into long
-        uint32_t tempLong;
+        byte temp[sizeof(uint16_t)]; //Array of 4 bytes that we will convert into long
+        uint16_t tempLong;
 
         //Burst read three bytes - RED
-        temp[3] = 0;
-        temp[2] = _i2cPort->read();
+        //temp[3] = 0;
+        //temp[2] = _i2cPort->read();
         temp[1] = _i2cPort->read();
         temp[0] = _i2cPort->read();
 
         //Convert array to long
         memcpy(&tempLong, temp, sizeof(tempLong));
 		
-		tempLong &= 0x3FFFF; //Zero out all but 18 bits
+		//tempLong &= 0x3FFFF; //Zero out all but 18 bits
 
         sense.red[sense.head] = tempLong; //Store this reading into the sense array
 
         if (activeLEDs > 1)
         {
           //Burst read three more bytes - IR
-          temp[3] = 0;
-          temp[2] = _i2cPort->read();
+          //temp[3] = 0;
+          //temp[2] = _i2cPort->read();
           temp[1] = _i2cPort->read();
           temp[0] = _i2cPort->read();
 
           //Convert array to long
           memcpy(&tempLong, temp, sizeof(tempLong));
 
-		  tempLong &= 0x3FFFF; //Zero out all but 18 bits
+		  //tempLong &= 0x3FFFF; //Zero out all but 18 bits
           
 		  sense.IR[sense.head] = tempLong;
         }
@@ -706,15 +723,15 @@ uint16_t MAX30105::check(void)
         if (activeLEDs > 2)
         {
           //Burst read three more bytes - Green
-          temp[3] = 0;
-          temp[2] = _i2cPort->read();
+          //temp[3] = 0;
+          //temp[2] = _i2cPort->read();
           temp[1] = _i2cPort->read();
           temp[0] = _i2cPort->read();
 
           //Convert array to long
           memcpy(&tempLong, temp, sizeof(tempLong));
 
-		  tempLong &= 0x3FFFF; //Zero out all but 18 bits
+		  //tempLong &= 0x3FFFF; //Zero out all but 18 bits
 
           sense.green[sense.head] = tempLong;
         }

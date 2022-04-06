@@ -30,8 +30,10 @@ long samplesTaken = 0; //Counter for calculating the Hz or read rate
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("Initializing...");
+  //Serial.println("Initializing...");
 
+  Wire.begin();
+  Wire.setClock(I2C_SPEED_FAST);
   // Initialize sensor
   if (particleSensor.begin(Wire, I2C_SPEED_FAST) == false) //Use default I2C port, 400kHz speed
   {
@@ -40,11 +42,11 @@ void setup()
   }
 
   //Setup to sense up to 18 inches, max LED brightness
-  byte ledBrightness = 0xFF; //Options: 0=Off to 255=50mA
+  byte ledBrightness = 0xBB; //Options: 0=Off to 255=50mA // for MAX30100 -> 4 bits for Red and 4 bits for IR
   byte sampleAverage = 4; //Options: 1, 2, 4, 8, 16, 32
   byte ledMode = 2; //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
-  int sampleRate = 400; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
-  int pulseWidth = 411; //Options: 69, 118, 215, 411
+  int sampleRate = 200; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
+  int pulseWidth = 411; //Options: 69, 118, 215, 411 // For MAX30100: 411 -> 1600uS with
   int adcRange = 2048; //Options: 2048, 4096, 8192, 16384
 
   particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); //Configure sensor with these settings
@@ -61,15 +63,16 @@ void loop()
   {
     samplesTaken++;
 
-    Serial.print(" R[");
+	Serial.print("IR:");
+	Serial.print(particleSensor.getFIFOIR());
+    Serial.print(",");
+    Serial.print("Red:");
     Serial.print(particleSensor.getFIFORed());
-    Serial.print("] IR[");
-    Serial.print(particleSensor.getFIFOIR());
-    Serial.print("] G[");
-    Serial.print(particleSensor.getFIFOGreen());
-    Serial.print("] Hz[");
-    Serial.print((float)samplesTaken / ((millis() - startTime) / 1000.0), 2);
-    Serial.print("]");
+    //Serial.print("] G[");
+    //Serial.print(particleSensor.getFIFOGreen());
+    //Serial.print("] Hz[");
+    //Serial.print((float)samplesTaken / ((millis() - startTime) / 1000.0), 2);
+    //Serial.print("]");
 
     Serial.println();
 
