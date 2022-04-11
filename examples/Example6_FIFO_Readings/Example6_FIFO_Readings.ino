@@ -30,7 +30,7 @@ long samplesTaken = 0; //Counter for calculating the Hz or read rate
 void setup()
 {
   Serial.begin(115200);
-  //Serial.println("Initializing...");
+  Serial.println("Initializing...");
 
   Wire.begin();
   Wire.setClock(I2C_SPEED_FAST);
@@ -45,7 +45,7 @@ void setup()
   byte ledBrightness = 0xBB; //Options: 0=Off to 255=50mA // for MAX30100 -> 4 bits for Red and 4 bits for IR
   byte sampleAverage = 4; //Options: 1, 2, 4, 8, 16, 32
   byte ledMode = 2; //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
-  int sampleRate = 200; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
+  int sampleRate = 100; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
   int pulseWidth = 411; //Options: 69, 118, 215, 411 // For MAX30100: 411 -> 1600uS with
   int adcRange = 2048; //Options: 2048, 4096, 8192, 16384
 
@@ -63,9 +63,9 @@ void loop()
   {
     samplesTaken++;
 
-	Serial.print("IR:");
-	Serial.print(particleSensor.getFIFOIR());
-    Serial.print(",");
+	//Serial.print("IR:");
+	//Serial.print(particleSensor.getFIFOIR());
+    //Serial.print(",");
     Serial.print("Red:");
     Serial.print(particleSensor.getFIFORed());
     //Serial.print("] G[");
