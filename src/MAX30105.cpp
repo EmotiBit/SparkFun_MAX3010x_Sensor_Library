@@ -515,22 +515,22 @@ void MAX30105::setup(byte powerLevel, byte sampleAverage, byte ledMode, int samp
   setADCRange(0x40); // sets the SPO2 HI res OM
 
   if (sampleRate < 100) setSampleRate(MAX30105_SAMPLERATE_50); //Take 50 samples per second
-  else if (sampleRate < 200) setSampleRate(MAX30105_SAMPLERATE_100);
-  else if (sampleRate < 400) setSampleRate(MAX30105_SAMPLERATE_167);
-  else if (sampleRate < 800) setSampleRate(MAX30105_SAMPLERATE_200);
-  else if (sampleRate < 1000) setSampleRate(MAX30105_SAMPLERATE_400);
-  else if (sampleRate < 1600) setSampleRate(MAX30105_SAMPLERATE_600);
-  else if (sampleRate < 3200) setSampleRate(MAX30105_SAMPLERATE_800);
-  else if (sampleRate == 3200) setSampleRate(MAX30105_SAMPLERATE_1000);
+  else if (sampleRate < 167) setSampleRate(MAX30105_SAMPLERATE_100);
+  else if (sampleRate < 200) setSampleRate(MAX30105_SAMPLERATE_167);
+  else if (sampleRate < 400) setSampleRate(MAX30105_SAMPLERATE_200);
+  else if (sampleRate < 600) setSampleRate(MAX30105_SAMPLERATE_400);
+  else if (sampleRate < 800) setSampleRate(MAX30105_SAMPLERATE_600);
+  else if (sampleRate < 1000) setSampleRate(MAX30105_SAMPLERATE_800);
+  else if (sampleRate == 1000) setSampleRate(MAX30105_SAMPLERATE_1000);
   else setSampleRate(MAX30105_SAMPLERATE_50);
 
   //The longer the pulse width the longer range of detection you'll have
   //At 69us and 0.4mA it's about 2 inches
   //At 411us and 0.4mA it's about 6 inches
-  if (pulseWidth < 118) setPulseWidth(MAX30105_PULSEWIDTH_69); //Page 26, Gets us 15 bit resolution
-  else if (pulseWidth < 215) setPulseWidth(MAX30105_PULSEWIDTH_118); //16 bit resolution
-  else if (pulseWidth < 411) setPulseWidth(MAX30105_PULSEWIDTH_215); //17 bit resolution
-  else if (pulseWidth == 411) setPulseWidth(MAX30105_PULSEWIDTH_411); //18 bit resolution
+  if (pulseWidth < 201) setPulseWidth(MAX30105_PULSEWIDTH_69); //Page 26, Gets us 15 bit resolution
+  else if (pulseWidth < 401) setPulseWidth(MAX30105_PULSEWIDTH_118); //16 bit resolution
+  else if (pulseWidth < 801) setPulseWidth(MAX30105_PULSEWIDTH_215); //17 bit resolution
+  else if (pulseWidth == 1600) setPulseWidth(MAX30105_PULSEWIDTH_411); //18 bit resolution
   else setPulseWidth(MAX30105_PULSEWIDTH_69);
   //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
