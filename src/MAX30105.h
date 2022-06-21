@@ -26,7 +26,10 @@
 #define I2C_SPEED_FAST            400000
 
 //Define the size of the I2C buffer based on the platform the user has
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
+#if defined(I2C_BUFFER_LENGTH)
+	// already defined, do nothing
+
+#elif defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
 
   //I2C_BUFFER_LENGTH is defined in Wire.H
   #define I2C_BUFFER_LENGTH BUFFER_LENGTH
