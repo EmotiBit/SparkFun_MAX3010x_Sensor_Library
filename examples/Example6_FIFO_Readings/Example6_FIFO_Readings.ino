@@ -27,32 +27,51 @@ MAX30105 particleSensor;
 
 long startTime;
 long samplesTaken = 0; //Counter for calculating the Hz or read rate
-bool usingArduinoPlotter = true; // toggle to false if not using the plotter. When toggled off, it prints IR sensor as well
-bool enableSerial = true; 
+bool usingArduinoPlotter = false; // toggle to false if not using the plotter. When toggled off, it prints IR sensor as well
+bool enableSerial = false; 
+uint32_t maxTimeToCheck = 0;
+uint32_t maxTimeToGet = 0;
 
 // emotibit i2s definitaions
+#if defined ARDUINO_FEATHER_ESP32
+int timeToCheckIndicatorPin = 12;
+int timeTogetIndicatorPin = 33;
+#elif defined ADAFRUIT_FEATHER_M0
 int timeToCheckIndicatorPin = 12;
 int timeTogetIndicatorPin = 10;
+#endif
 uint8_t availablePinState = LOW;
-TwoWire* _EmotiBit_i2c;
+TwoWire* _EmotiBit_i2c = nullptr;
 int hibernatePin = 6;
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Initializing...");
-  pinMode(hibernatePin, OUTPUT);
-  digitalWrite(hibernatePin, HIGH);
+#if defined ARDUINO_FEATHER_ESP32
+  _EmotiBit_i2c = new TwoWire(0);
+  Serial.print("Setting up I2C(For ESP32)....");
+  bool status = _EmotiBit_i2c->begin(27, 13);
+  //status = _EmotiBit_i2c->begin(EmotiBitVersionController::EMOTIBIT_I2C_DAT_PIN, EmotiBitVersionController::EMOTIBIT_I2C_CLK_PIN);
+  //status = _EmotiBit_i2c->begin(27, 13);
+  if (status)
+  {
+	  Serial.println("I2c setup complete");
+  }
+  else
+  {
+	  Serial.println("I2c setup failed");
+  }
+#else
   _EmotiBit_i2c = new TwoWire(&sercom1, 11,13);
   _EmotiBit_i2c->begin();
   // ToDo: detect if i2c init fails
   //Serial.println("I2C interface initialized");
-  _EmotiBit_i2c->setClock(400000);
   pinPeripheral(11, PIO_SERCOM);
   pinPeripheral(13, PIO_SERCOM);
-
-  //Wire.begin();
-  //Wire.setClock(I2C_SPEED_FAST);
+#endif
+  // set i2c clock
+  _EmotiBit_i2c->setClock(400000);
   // Initialize sensor
   if (particleSensor.begin(*_EmotiBit_i2c) == false) //Use default I2C port, 400kHz speed
   {
@@ -83,49 +102,66 @@ void setup()
 
 void loop()
 {
+	uint32_t timeToCheck = micros();
 	digitalWrite(timeToCheckIndicatorPin, HIGH);
-  particleSensor.check(); //Check the sensor, read up to 2 samples
+	particleSensor.check(); //Check the sensor, read up to 2 samples
 	digitalWrite(timeToCheckIndicatorPin, LOW);
-	
-  while (particleSensor.available()) //do we have new data?
-  {
-	  // to track the sampling rate in the digital oscilloscope
-	  digitalWrite(timeTogetIndicatorPin, availablePinState);
-	  if (availablePinState == LOW)
-	  {
-		  availablePinState = HIGH;
-	  }
-	  else
-	  {
-		  availablePinState = LOW;
-	  }
-	  uint32_t startTimeMicros = micros();
-    samplesTaken++;
-	uint32_t irData, redData;
-	irData = particleSensor.getFIFOIR();
-	redData = particleSensor.getFIFORed();
-	if (enableSerial)
+	timeToCheck = micros() - timeToCheck;
+	if (maxTimeToCheck < timeToCheck)
 	{
-		if (!usingArduinoPlotter)
-		{
-			Serial.print("timeToGet: "); Serial.print(micros() - startTimeMicros); Serial.print("\t");
-			Serial.print("IR:");
-			Serial.print(irData);
-			Serial.print(",");
-
-		}
-		Serial.print("Red:");
-		Serial.print(redData);
-		if (!usingArduinoPlotter)
-		{
-			Serial.print("\tHz[");
-			Serial.print((float)samplesTaken / ((millis() - startTime) / 1000.0), 2);
-			Serial.print("]");
-
-		}
-		Serial.println();
+		maxTimeToCheck = timeToCheck;
 	}
-    particleSensor.nextSample(); //We're finished with this sample so move to next sample
-  }
+	while (particleSensor.available()) //do we have new data?
+	{
+		// to track the sampling rate in the digital oscilloscope
+		samplesTaken++;
+		uint32_t irData, redData;
+		uint32_t timeToGetData = micros();
+		digitalWrite(timeTogetIndicatorPin, HIGH);
+		irData = particleSensor.getFIFOIR();
+		redData = particleSensor.getFIFORed();
+		digitalWrite(timeTogetIndicatorPin, LOW);
+		timeToGetData = micros() - timeToGetData;
+		if (maxTimeToGet < timeToGetData)
+		{
+			maxTimeToGet = timeToGetData;
+		}
+		if (enableSerial)
+		{
+			if (!usingArduinoPlotter)
+			{
+				Serial.print("IR:");
+				Serial.print(irData);
+				Serial.print(",");
+
+			}
+			Serial.print("Red:");
+			Serial.print(redData);
+			if (!usingArduinoPlotter)
+			{
+				Serial.print("\tHz[");
+				Serial.print((float)samplesTaken / ((millis() - startTime) / 1000.0), 2);
+				Serial.print("]");
+
+			}
+			Serial.println();
+		}
+		uint32_t timeForNextSample = micros();
+		particleSensor.nextSample(); //We're finished with this sample so move to next sample
+		timeForNextSample = micros() - timeForNextSample;
+		if (Serial.available())
+		{
+			char input = Serial.read();
+			// flush serial buffer
+			while (Serial.available())
+			{
+				Serial.read();
+			}
+			Serial.print("maxTimeToCheck: "); Serial.print(maxTimeToCheck); Serial.println(" uS");
+			Serial.print("maxTimeToGet: "); Serial.print(maxTimeToGet); Serial.println(" uS");
+			Serial.print("timeForNextSample: "); Serial.print(timeForNextSample); Serial.println(" uS");
+		}
+		
+	}
   
 }
