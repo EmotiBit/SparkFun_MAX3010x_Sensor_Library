@@ -83,7 +83,7 @@ void setup()
   byte ledBrightness = 0x22;  // for MAX30100 -> 4 bits for Red and 4 bits for IR
   byte sampleAverage = 4; // irrelevant for MAX30100
   byte ledMode = 2; //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
-  int sampleRate = 50; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
+  int sampleRate = 100; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
   int pulseWidth = 1600; //Options: 200, 400, 800, 1600 
   int adcRange = 2048; //Options: 2048, 4096, 8192, 16384
   if (sampleRate > 100)
@@ -160,6 +160,8 @@ void loop()
 			Serial.print("maxTimeToCheck: "); Serial.print(maxTimeToCheck); Serial.println(" uS");
 			Serial.print("maxTimeToGet: "); Serial.print(maxTimeToGet); Serial.println(" uS");
 			Serial.print("timeForNextSample: "); Serial.print(timeForNextSample); Serial.println(" uS");
+			Serial.print("Empirical Sampling rate: (Hz): ");
+			Serial.println((float)samplesTaken / ((millis() - startTime) / 1000.0), 2);
 		}
 		
 	}
