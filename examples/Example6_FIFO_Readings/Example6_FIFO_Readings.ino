@@ -27,8 +27,8 @@ MAX30105 particleSensor;
 
 long startTime;
 long samplesTaken = 0; //Counter for calculating the Hz or read rate
-bool usingArduinoPlotter = false; // toggle to false if not using the plotter. When toggled off, it prints IR sensor as well
-bool enableSerial = false; 
+bool usingArduinoPlotter = true; // toggle to false if not using the plotter. When toggled off, it prints IR sensor as well
+bool enableSerial = true; 
 uint32_t maxTimeToCheck = 0;
 uint32_t maxTimeToGet = 0;
 
@@ -36,17 +36,23 @@ uint32_t maxTimeToGet = 0;
 #if defined ARDUINO_FEATHER_ESP32
 int timeToCheckIndicatorPin = 12;
 int timeTogetIndicatorPin = 33;
+int hibernatePin = 32;
 #elif defined ADAFRUIT_FEATHER_M0
 int timeToCheckIndicatorPin = 12;
 int timeTogetIndicatorPin = 10;
+int hibernatePin = 6;
 #endif
 uint8_t availablePinState = LOW;
 TwoWire* _EmotiBit_i2c = nullptr;
-int hibernatePin = 6;
 
 void setup()
 {
   Serial.begin(115200);
+  // Need to Power-on EmotiBit, if MAX30100 dev board needs to be used with Feather stacked with EmotiBit
+  // If not powered ON, a sensor on EMotiBit might be pulling the I2C line low.
+  pinMode(hibernatePin, OUTPUT);
+  digitalWrite(hibernatePin, HIGH);
+  delay(1000);
   Serial.println("Initializing...");
 #if defined ARDUINO_FEATHER_ESP32
   _EmotiBit_i2c = new TwoWire(0);
@@ -83,7 +89,7 @@ void setup()
   byte ledBrightness = 0x22;  // for MAX30100 -> 4 bits for Red and 4 bits for IR
   byte sampleAverage = 4; // irrelevant for MAX30100
   byte ledMode = 2; //Options: 1 = Red only, 2 = Red + IR, 3 = Red + IR + Green
-  int sampleRate = 100; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
+  int sampleRate = 50; //Options: 50, 100, 200, 400, 800, 1000, 1600, 3200
   int pulseWidth = 1600; //Options: 200, 400, 800, 1600 
   int adcRange = 2048; //Options: 2048, 4096, 8192, 16384
   if (sampleRate > 100)
