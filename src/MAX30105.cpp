@@ -12,10 +12,12 @@
 #include "MAX30105.h"
 
 // Status Registers
-static const uint8_t MAX30105_INTSTAT1 =		0x00;
-static const uint8_t MAX30105_INTSTAT2 =		0x01;
-static const uint8_t MAX30105_INTENABLE1 =		0x01;
-static const uint8_t MAX30105_INTENABLE2 =		0x03;
+static const uint8_t MAX30101_INTSTAT =			0x00;  // only for MAX30100
+static const uint8_t MAX30105_INTSTAT1 =		0x00;  // only for MAX30101
+static const uint8_t MAX30105_INTSTAT2 =		0x01;  // only for MAX30101
+static const uint8_t MAX30101_INTENABLE =		0x01;  // only for MAX30100 
+static const uint8_t MAX30105_INTENABLE1 =		0x01;  // only for MAX30101
+static const uint8_t MAX30105_INTENABLE2 =		0x03;  // only for MAX30101
 
 // FIFO Registers
 static const uint8_t MAX30105_FIFOWRITEPTR = 	0x02;
@@ -37,8 +39,8 @@ static const uint8_t MAX30105_MULTILEDCONFIG1 = 0x11;
 static const uint8_t MAX30105_MULTILEDCONFIG2 = 0x12;
 
 // Die Temperature Registers
-static const uint8_t MAX30105_DIETEMPINT = 		0x1F;
-static const uint8_t MAX30105_DIETEMPFRAC = 	0x20;
+static const uint8_t MAX30105_DIETEMPINT = 		0x16;
+static const uint8_t MAX30105_DIETEMPFRAC = 	0x17;
 static const uint8_t MAX30105_DIETEMPCONFIG = 	0x21;
 
 // Proximity Function Registers
@@ -67,8 +69,11 @@ static const uint8_t MAX30105_INT_PROX_INT_ENABLE = 0x10;
 static const uint8_t MAX30105_INT_PROX_INT_DISABLE = 0x00;
 
 static const uint8_t MAX30105_INT_DIE_TEMP_RDY_MASK = (byte)~0b01000000;
-static const uint8_t MAX30105_INT_DIE_TEMP_RDY_ENABLE = 0x40;  // changed from 0x02
+static const uint8_t MAX30105_INT_DIE_TEMP_RDY_ENABLE = 0x40;  // changed from 0x02 for MAX30100
 static const uint8_t MAX30105_INT_DIE_TEMP_RDY_DISABLE = 0x00;
+
+static const uint8_t MAX30105_CONF_DIE_TEMP_EN_MASK = (byte)~0b00001000;
+static const uint8_t MAX30105_CONF_DIE_TEMP_START_MEAS = 0x08;
 
 static const uint8_t MAX30105_SAMPLEAVG_MASK =	(byte)~0b11100000;
 static const uint8_t MAX30105_SAMPLEAVG_1 = 	0x00;
@@ -209,7 +214,8 @@ void MAX30105::disablePROXINT(void) {
 }
 
 void MAX30105::enableDIETEMPRDY(void) {
-  bitMask(MAX30105_INTENABLE2, MAX30105_INT_DIE_TEMP_RDY_MASK, MAX30105_INT_DIE_TEMP_RDY_ENABLE);
+  // bitMask(MAX30105_INTENABLE2, MAX30105_INT_DIE_TEMP_RDY_MASK, MAX30105_INT_DIE_TEMP_RDY_ENABLE);
+  bitMask(MAX30101_INTENABLE, MAX30105_INT_DIE_TEMP_RDY_MASK, MAX30105_INT_DIE_TEMP_RDY_ENABLE);
 }
 void MAX30105::disableDIETEMPRDY(void) {
   bitMask(MAX30105_INTENABLE2, MAX30105_INT_DIE_TEMP_RDY_MASK, MAX30105_INT_DIE_TEMP_RDY_DISABLE);
@@ -374,11 +380,12 @@ uint8_t MAX30105::getReadPointer(void) {
 
 void MAX30105::startTempMeasurement() {
 	// setting appropriate bit to start temp measurement
-	writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);
+	// writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01); not required for MAX30100
+	bitMask(MAX30105_MODECONFIG, MAX30105_CONF_DIE_TEMP_EN_MASK, MAX30105_CONF_DIE_TEMP_START_MEAS);
 }
 
 bool MAX30105::getTemperature(float& temperature) {
-	uint8_t isTempMeasurementReady = readRegister8(_i2caddr, MAX30105_INTSTAT2);
+	uint8_t isTempMeasurementReady = readRegister8(_i2caddr, MAX30101_INTSTAT);
 	if (isTempMeasurementReady & MAX30105_INT_DIE_TEMP_RDY_ENABLE) {
 		// temp measurement available!
 		temperature = readTemperature(true);
@@ -398,7 +405,8 @@ float MAX30105::readTemperature(bool isAsync) {
   //See issue 19: https://github.com/sparkfun/SparkFun_MAX3010x_Sensor_Library/issues/19
 	if (!isAsync) {
 		// Step 1: Config die temperature register to take 1 temperature sample
-		writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);
+		// writeRegister8(_i2caddr, MAX30105_DIETEMPCONFIG, 0x01);  // not required for MAX30100
+		bitMask(MAX30105_MODECONFIG, MAX30105_CONF_DIE_TEMP_EN_MASK, MAX30105_CONF_DIE_TEMP_START_MEAS);
 	}
 	if (!isAsync) {
 		// Poll for bit to clear, reading is then complete
@@ -409,7 +417,7 @@ float MAX30105::readTemperature(bool isAsync) {
 			//if ((response & 0x01) == 0) break; //We're done!
 
 			//Check to see if DIE_TEMP_RDY interrupt is set
-			uint8_t response = readRegister8(_i2caddr, MAX30105_INTSTAT2);
+			uint8_t response = readRegister8(_i2caddr, MAX30101_INTSTAT);
 			if ((response & MAX30105_INT_DIE_TEMP_RDY_ENABLE) > 0) break; //We're done!
 			delay(1); //Let's not over burden the I2C bus
 		}
