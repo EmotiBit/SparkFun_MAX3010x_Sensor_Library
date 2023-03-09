@@ -57,22 +57,6 @@
 
 #include "heartRate.h"
 
-#include <Filters.h>
-#include <Filters/Butterworth.hpp>
-
-#ifdef EMOTIBIT_PPG_100HZ
-// Sampling frequency
-const double f_s = 100; // Hz
-#else
-// Sampling frequency
-const double f_s = 25; // Hz
-#endif
-// Cut-off frequency (-3 dB)
-const double f_c = 3; // Hz
-// Normalized cut-off frequency
-const double f_n = 2 * f_c / f_s;
-
-auto filter = butter<2>(f_n);  // choosing a second order butterworth filter
 
 int16_t IR_AC_Max = 20;
 int16_t IR_AC_Min = -20;
@@ -95,16 +79,16 @@ static const uint16_t FIRCoeffs[12] = {172, 321, 579, 927, 1360, 1858, 2390, 291
 //  Heart Rate Monitor functions takes a sample value and the sample number
 //  Returns true if a beat is detected
 //  A running average of four samples is recommended for display on the screen.
-bool checkForBeat(int32_t sample, int16_t &iirFiltData)
+bool checkForBeat(int32_t sample)
 {
   bool beatDetected = false;
 
   //  Save current state
   IR_AC_Signal_Previous = IR_AC_Signal_Current;
   
-  //  Process next data sample
-  IR_AC_Signal_Current = lowPassIIRFitler(sample);  // sample is already IIR high pass filtered in EmotiBit cpp
-  iirFiltData = IR_AC_Signal_Current;
+  // sample is already IIR high pass filtered in EmotiBit cpp
+  IR_AC_Signal_Current = sample;  
+
 
   //  Detect positive zero crossing (rising edge)
   if ((IR_AC_Signal_Previous < 0) & (IR_AC_Signal_Current >= 0))
@@ -170,11 +154,6 @@ int16_t lowPassFIRFilter(int16_t din)
   offset %= 32; //Wrap condition
 
   return(z >> 15);
-}
-
-int16_t lowPassIIRFitler(int16_t sample)
-{
-  return filter(sample);
 }
 
 //  Integer multiplier
