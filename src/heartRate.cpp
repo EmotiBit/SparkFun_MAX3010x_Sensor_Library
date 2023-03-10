@@ -94,8 +94,7 @@ static const uint16_t FIRCoeffs[12] = {172, 321, 579, 927, 1360, 1858, 2390, 291
 
 //  Heart Rate Monitor functions takes a sample value and the sample number
 //  Returns true if a beat is detected
-//  A running average of four samples is recommended for display on the screen.
-bool checkForBeat(int32_t sample, int16_t &iirFiltData)
+bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
 {
   bool beatDetected = false;
 
@@ -103,7 +102,13 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData)
   IR_AC_Signal_Previous = IR_AC_Signal_Current;
   
   //  Process next data sample
-  IR_AC_Signal_Current = lowPassIIRFitler(sample);  // sample is already IIR high pass filtered in EmotiBit cpp
+  if(!dcRemoved)
+  {
+    IR_Average_Estimated = averageDCEstimator(&ir_avg_reg, sample);
+    sample -= IR_Average_Estimated;
+  }
+
+  IR_AC_Signal_Current = lowPassIIRFitler((float)sample);  // sample is already IIR high pass filtered in EmotiBit cpp
   iirFiltData = IR_AC_Signal_Current;
 
   //  Detect positive zero crossing (rising edge)
@@ -172,9 +177,9 @@ int16_t lowPassFIRFilter(int16_t din)
   return(z >> 15);
 }
 
-int16_t lowPassIIRFitler(int16_t sample)
+int16_t lowPassIIRFitler(float sample)
 {
-  return filter(sample);
+  return (int16_t)filter(sample);
 }
 
 //  Integer multiplier
