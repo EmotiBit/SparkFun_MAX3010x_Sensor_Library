@@ -63,6 +63,5 @@
 
 bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved = false);
 int16_t averageDCEstimator(int32_t *p, uint16_t x);
-int16_t lowPassFIRFilter(int16_t din);
 int16_t lowPassIIRFitler(float sample);
 int32_t mul16(int16_t x, int16_t y);

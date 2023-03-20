@@ -87,11 +87,6 @@ int16_t positiveEdge = 0;
 int16_t negativeEdge = 0;
 int32_t ir_avg_reg = 0;
 
-int16_t cbuf[32];
-uint8_t offset = 0;
-
-static const uint16_t FIRCoeffs[12] = {172, 321, 579, 927, 1360, 1858, 2390, 2916, 3391, 3768, 4012, 4096};
-
 //  Heart Rate Monitor functions takes a sample value and the sample number
 //  Returns true if a beat is detected
 bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
@@ -159,23 +154,6 @@ int16_t averageDCEstimator(int32_t *p, uint16_t x)
   return (*p >> 15);
 }
 
-//  Low Pass FIR Filter
-int16_t lowPassFIRFilter(int16_t din)
-{  
-  cbuf[offset] = din;
-
-  int32_t z = mul16(FIRCoeffs[11], cbuf[(offset - 11) & 0x1F]);
-  
-  for (uint8_t i = 0 ; i < 11 ; i++)
-  {
-    z += mul16(FIRCoeffs[i], cbuf[(offset - i) & 0x1F] + cbuf[(offset - 22 + i) & 0x1F]);
-  }
-
-  offset++;
-  offset %= 32; //Wrap condition
-
-  return(z >> 15);
-}
 
 int16_t lowPassIIRFitler(float sample)
 {
