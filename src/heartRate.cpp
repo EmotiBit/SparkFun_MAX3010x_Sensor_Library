@@ -117,7 +117,7 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
     negativeEdge = 0;
     IR_AC_Signal_max = 0;
 
-    if ((IR_AC_Max - IR_AC_Min) > 20 & (IR_AC_Max - IR_AC_Min) < 1000)
+    if ((IR_AC_Max - IR_AC_Min) > 20 & (IR_AC_Max - IR_AC_Min) < 2000)
     {
       //Heart beat!!!
       beatDetected = true;
