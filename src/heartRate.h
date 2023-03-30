@@ -61,7 +61,14 @@
  #include "WProgram.h"
 #endif
 
-bool checkForBeat(int32_t sample);
+/*!
+ * @brief Function to detect heart beats from PPG signal
+ * @param sample Next input sample from the time series data
+ * @param iirFiltData The result of the filtered data. Use this variable to pass filtered result to the calling function
+ * @param dcRemoved Set to true if input has been low pass filtered before checking for a beat
+ * @return True if beat is detected, else False
+ */
+bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved = false);
 int16_t averageDCEstimator(int32_t *p, uint16_t x);
-int16_t lowPassFIRFilter(int16_t din);
+int16_t lowPassIIRFitler(float sample);
 int32_t mul16(int16_t x, int16_t y);
