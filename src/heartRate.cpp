@@ -73,6 +73,13 @@ const double f_c = 3; // Hz
 const double f_n = 2 * f_c / f_s;
 
 auto filter = butter<2>(f_n);  // choosing a second order butterworth filter
+auto acSignalAmplitudeFilter_P1_FN_02 = butter<1>(0.2);  // choosing a second order butterworth filter to smooth the acSignal 
+auto acSignalAmplitudeFilter_P1_FN_03 = butter<1>(0.3);  // choosing a second order butterworth filter to smooth the acSignal 
+auto acSignalAmplitudeFilter = butter<1>(0.4);  // choosing a second order butterworth filter to smooth the acSignal 
+auto acSignalAmplitudeFilter_P1_FN_05 = butter<1>(0.5);  // choosing a second order butterworth filter to smooth the acSignal 
+auto acSignalAmplitudeFilter_P1_FN_06 = butter<1>(0.6);  // choosing a second order butterworth filter to smooth the acSignal 
+const int16_t IR_AC_MIN_AMP = 20;  // EmotiBit with no finger usually presents AC noise in the 0-10 range
+const int16_t IR_AC_MAX_AMP = 10000;  // A movement artifact usually registers on this high range. Normal IR range usually lieas  beloe 2000
 
 int16_t IR_AC_Max = 20;
 int16_t IR_AC_Min = -20;
@@ -109,19 +116,51 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
   //  Detect positive zero crossing (rising edge)
   if ((IR_AC_Signal_Previous < 0) & (IR_AC_Signal_Current >= 0))
   {
-  
+   
     IR_AC_Max = IR_AC_Signal_max; //Adjust our AC max and min
     IR_AC_Min = IR_AC_Signal_min;
 
+    int16_t IR_AC_amplitude = IR_AC_Max - IR_AC_Min;
     positiveEdge = 1;
     negativeEdge = 0;
     IR_AC_Signal_max = 0;
+    
+    int16_t y02 = acSignalAmplitudeFilter_P1_FN_02(IR_AC_amplitude);
+    int16_t y03 = acSignalAmplitudeFilter_P1_FN_03(IR_AC_amplitude);
+    int16_t filteredAcAmp = acSignalAmplitudeFilter(IR_AC_amplitude);
+    int16_t y05 = acSignalAmplitudeFilter_P1_FN_05(IR_AC_amplitude);
+    int16_t y06 = acSignalAmplitudeFilter_P1_FN_06(IR_AC_amplitude);
+    int16_t acAmpUpperBound = filteredAcAmp * 1.5;  // This scaling factor is chosen as it works reasonably well with test conditions
+    int16_t acAmpLowerBound = filteredAcAmp * 0.5;  // This scaling factor is chosen as it works reasonably well with test conditions
 
-    if ((IR_AC_Max - IR_AC_Min) > 20 & (IR_AC_Max - IR_AC_Min) < 2000)
+    Serial.print(millis()); Serial.print(",");
+    if (IR_AC_amplitude > IR_AC_MIN_AMP & IR_AC_amplitude < IR_AC_MAX_AMP)
     {
-      //Heart beat!!!
-      beatDetected = true;
+      // signal is within ABS bounds
+      if(IR_AC_amplitude > acAmpLowerBound && IR_AC_amplitude < acAmpUpperBound)
+      {
+        // signal is within the filtered signal bounds
+        Serial.print("BEAT DETECTED,");
+        //Heart beat!!!
+        beatDetected = true;
+      }
+      else
+      {
+        Serial.print("NOT DETECTED (OOB),");
+      }
     }
+    else
+    {
+      Serial.print("NOT DETECTED (NOISE),");
+    }
+    Serial.print(IR_AC_amplitude); Serial.print(",");
+    Serial.print(acAmpLowerBound); Serial.print(",");
+    Serial.print(filteredAcAmp); Serial.print(",");
+    Serial.print(acAmpUpperBound); Serial.print(",");
+    Serial.print(y02); Serial.print(",");
+    Serial.print(y03); Serial.print(",");
+    Serial.print(y05); Serial.print(",");
+    Serial.print(y06); Serial.println();
   }
 
   //  Detect negative zero crossing (falling edge)
