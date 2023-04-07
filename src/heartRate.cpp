@@ -79,8 +79,8 @@ auto acSignalAmplitudeFilter_P1_FN_02 = butter<1>(0.2);  // choosing a second or
 auto acSignalAmplitudeFilter_P1_FN_03 = butter<1>(0.3);  // choosing a second order butterworth filter to smooth the acSignal 
 auto acSignalAmplitudeFilter_P1_FN_05 = butter<1>(0.5);  // choosing a second order butterworth filter to smooth the acSignal 
 auto acSignalAmplitudeFilter_P1_FN_06 = butter<1>(0.6);  // choosing a second order butterworth filter to smooth the acSignal 
-const int16_t IR_AC_MIN_AMP = 20;  // EmotiBit with no finger usually presents AC noise in the 0-10 range
-const int16_t IR_AC_MAX_AMP = 10000;  // A movement artifact usually registers on this high range. Normal IR range usually lieas  beloe 2000
+const int16_t IR_AC_MIN_AMP = 20;  // ABS MIN to consider it as a valid AC signal. EmotiBit with no finger usually presents AC noise in the 0-10 range
+const int16_t IR_AC_MAX_AMP = 10000;  // ABS MAX to consider it as a valid AC signal
 
 int16_t IR_AC_Max = 20;
 int16_t IR_AC_Min = -20;
