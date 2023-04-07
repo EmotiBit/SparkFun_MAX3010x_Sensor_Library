@@ -73,9 +73,10 @@ const double f_c = 3; // Hz
 const double f_n = 2 * f_c / f_s;
 
 auto filter = butter<2>(f_n);  // choosing a second order butterworth filter
+auto acSignalAmplitudeFilter = butter<1>(0.4);  // choosing a second order butterworth filter to smooth the acSignal 
+// following filters are added for testing. Will be removed from mainline code
 auto acSignalAmplitudeFilter_P1_FN_02 = butter<1>(0.2);  // choosing a second order butterworth filter to smooth the acSignal 
 auto acSignalAmplitudeFilter_P1_FN_03 = butter<1>(0.3);  // choosing a second order butterworth filter to smooth the acSignal 
-auto acSignalAmplitudeFilter = butter<1>(0.4);  // choosing a second order butterworth filter to smooth the acSignal 
 auto acSignalAmplitudeFilter_P1_FN_05 = butter<1>(0.5);  // choosing a second order butterworth filter to smooth the acSignal 
 auto acSignalAmplitudeFilter_P1_FN_06 = butter<1>(0.6);  // choosing a second order butterworth filter to smooth the acSignal 
 const int16_t IR_AC_MIN_AMP = 20;  // EmotiBit with no finger usually presents AC noise in the 0-10 range
@@ -153,6 +154,7 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
     {
       Serial.print("NOT DETECTED (NOISE),");
     }
+    // serial prints for testing/debugging
     Serial.print(IR_AC_amplitude); Serial.print(",");
     Serial.print(acAmpLowerBound); Serial.print(",");
     Serial.print(filteredAcAmp); Serial.print(",");
