@@ -74,6 +74,7 @@ const double f_n = 2 * f_c / f_s;
 
 auto filter = butter<2>(f_n);  // choosing a second order butterworth filter
 auto acSignalAmplitudeFilter = butter<1>(0.4);  // choosing a second order butterworth filter to smooth the acSignal 
+auto allowedChannelWidthFilter = butter<1>(0.1);  //< Filter to smooth variation in the allowed channel width around AC Signal 
 // following filters are added for testing. Will be removed from mainline code
 auto acSignalAmplitudeFilter_P1_FN_02 = butter<1>(0.2);  // choosing a second order butterworth filter to smooth the acSignal 
 auto acSignalAmplitudeFilter_P1_FN_03 = butter<1>(0.3);  // choosing a second order butterworth filter to smooth the acSignal 
@@ -90,10 +91,16 @@ int16_t IR_AC_Signal_Previous;
 int16_t IR_AC_Signal_min = 0;
 int16_t IR_AC_Signal_max = 0;
 int16_t IR_Average_Estimated;
+int16_t IR_AC_amplitude;
 
 int16_t positiveEdge = 0;
 int16_t negativeEdge = 0;
 int32_t ir_avg_reg = 0;
+
+int16_t filteredAcAmp;
+int16_t allowedChannelWidth;
+int16_t acAmpUpperBound;  // This scaling factor is chosen as it works reasonably well with test conditions
+int16_t acAmpLowerBound;  // This scaling factor is chosen as it works reasonably well with test conditions
 
 //  Heart Rate Monitor functions takes a sample value and the sample number
 //  Returns true if a beat is detected
@@ -121,18 +128,19 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
     IR_AC_Max = IR_AC_Signal_max; //Adjust our AC max and min
     IR_AC_Min = IR_AC_Signal_min;
 
-    int16_t IR_AC_amplitude = IR_AC_Max - IR_AC_Min;
+    IR_AC_amplitude = IR_AC_Max - IR_AC_Min;
     positiveEdge = 1;
     negativeEdge = 0;
     IR_AC_Signal_max = 0;
     
     int16_t y02 = acSignalAmplitudeFilter_P1_FN_02(IR_AC_amplitude);
     int16_t y03 = acSignalAmplitudeFilter_P1_FN_03(IR_AC_amplitude);
-    int16_t filteredAcAmp = acSignalAmplitudeFilter(IR_AC_amplitude);
+    filteredAcAmp = acSignalAmplitudeFilter(IR_AC_amplitude);
     int16_t y05 = acSignalAmplitudeFilter_P1_FN_05(IR_AC_amplitude);
     int16_t y06 = acSignalAmplitudeFilter_P1_FN_06(IR_AC_amplitude);
-    int16_t acAmpUpperBound = filteredAcAmp * 1.5;  // This scaling factor is chosen as it works reasonably well with test conditions
-    int16_t acAmpLowerBound = filteredAcAmp * 0.5;  // This scaling factor is chosen as it works reasonably well with test conditions
+    allowedChannelWidth = allowedChannelWidthFilter(filteredAcAmp * 0.5);  // This scaling factor is chosen as it works reasonably well with test conditions
+    acAmpUpperBound = filteredAcAmp + (allowedChannelWidth/2);  // Upper bound is half channel width above AC Signal
+    acAmpLowerBound = filteredAcAmp - (allowedChannelWidth/2);  // Lower bound is half channel width below AC Signal
 
     Serial.print(millis()); Serial.print(",");
     if (IR_AC_amplitude > IR_AC_MIN_AMP & IR_AC_amplitude < IR_AC_MAX_AMP)
