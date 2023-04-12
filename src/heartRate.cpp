@@ -132,8 +132,8 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
     
     filteredAcAmp = acSignalAmplitudeFilter.filter(IR_AC_amplitude);
     acRange = acRangeFitler.filter(filteredAcAmp);
-    acAmpUpperBound = filteredAcAmp + (acRange * AC_RANGE_MULTIPLIER);  // Upper bound is half channel width above AC Signal
-    acAmpLowerBound = filteredAcAmp - (acRange * AC_RANGE_MULTIPLIER);  // Lower bound is half channel width below AC Signal
+    acAmpUpperBound = filteredAcAmp + (acRange * AC_RANGE_MULTIPLIER);  // Upper bound is adjusted based on acRange and range multiplier
+    acAmpLowerBound = filteredAcAmp - (acRange * AC_RANGE_MULTIPLIER);  // Lower bound is adjusted based on acRange and range multiplier
  
     Serial.print(millis()); Serial.print(",");
     if (IR_AC_amplitude > IR_AC_MIN_AMP & IR_AC_amplitude < IR_AC_MAX_AMP)
