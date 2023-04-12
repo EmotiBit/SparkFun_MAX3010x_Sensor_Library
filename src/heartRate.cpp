@@ -56,7 +56,7 @@
 */
 
 #include "heartRate.h"
-
+#include "DigitalFilter.h"
 #include <Filters.h>
 #include <Filters/Butterworth.hpp>
 
@@ -72,14 +72,11 @@ const double f_c = 3; // Hz
 // Normalized cut-off frequency
 const double f_n = 2 * f_c / f_s;
 
-auto filter = butter<2>(f_n);  // choosing a second order butterworth filter
-auto acSignalAmplitudeFilter = butter<1>(0.4);  // choosing a second order butterworth filter to smooth the acSignal 
-auto allowedChannelWidthFilter = butter<1>(0.1);  //< Filter to smooth variation in the allowed channel width around AC Signal 
-// following filters are added for testing. Will be removed from mainline code
-auto acSignalAmplitudeFilter_P1_FN_02 = butter<1>(0.2);  // choosing a second order butterworth filter to smooth the acSignal 
-auto acSignalAmplitudeFilter_P1_FN_03 = butter<1>(0.3);  // choosing a second order butterworth filter to smooth the acSignal 
-auto acSignalAmplitudeFilter_P1_FN_05 = butter<1>(0.5);  // choosing a second order butterworth filter to smooth the acSignal 
-auto acSignalAmplitudeFilter_P1_FN_06 = butter<1>(0.6);  // choosing a second order butterworth filter to smooth the acSignal 
+auto filter = butter<2>(f_n);  //< LPF to smooth output of respiration removed signal. The output of this filter is fed to the peak-detector
+DigitalFilter acSignalAmplitudeFilter(DigitalFilter::FilterType::IIR_LOWPASS, 10, 1); //< create normalized cutoff of 0.1. Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
+DigitalFilter acRangeFitler(DigitalFilter::FilterType::IIR_LOWPASS, 10, 5); //< create normalized cutoff of 0.1. Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
+const float AC_RANGE_MULTIPLIER = 1.f/1.5;  // Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
+
 const int16_t IR_AC_MIN_AMP = 20;  // ABS MIN to consider it as a valid AC signal. EmotiBit with no finger usually presents AC noise in the 0-10 range
 const int16_t IR_AC_MAX_AMP = 10000;  // ABS MAX to consider it as a valid AC signal
 
@@ -98,7 +95,7 @@ int16_t negativeEdge = 0;
 int32_t ir_avg_reg = 0;
 
 int16_t filteredAcAmp;
-int16_t allowedChannelWidth;
+int16_t acRange;
 int16_t acAmpUpperBound;  // This scaling factor is chosen as it works reasonably well with test conditions
 int16_t acAmpLowerBound;  // This scaling factor is chosen as it works reasonably well with test conditions
 
@@ -133,15 +130,11 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
     negativeEdge = 0;
     IR_AC_Signal_max = 0;
     
-    int16_t y02 = acSignalAmplitudeFilter_P1_FN_02(IR_AC_amplitude);
-    int16_t y03 = acSignalAmplitudeFilter_P1_FN_03(IR_AC_amplitude);
-    filteredAcAmp = acSignalAmplitudeFilter(IR_AC_amplitude);
-    int16_t y05 = acSignalAmplitudeFilter_P1_FN_05(IR_AC_amplitude);
-    int16_t y06 = acSignalAmplitudeFilter_P1_FN_06(IR_AC_amplitude);
-    allowedChannelWidth = allowedChannelWidthFilter(filteredAcAmp * 0.5);  // This scaling factor is chosen as it works reasonably well with test conditions
-    acAmpUpperBound = filteredAcAmp + (allowedChannelWidth/2);  // Upper bound is half channel width above AC Signal
-    acAmpLowerBound = filteredAcAmp - (allowedChannelWidth/2);  // Lower bound is half channel width below AC Signal
-
+    filteredAcAmp = acSignalAmplitudeFilter.filter(IR_AC_amplitude);
+    acRange = acRangeFitler.filter(filteredAcAmp);
+    acAmpUpperBound = filteredAcAmp + (acRange * AC_RANGE_MULTIPLIER);  // Upper bound is half channel width above AC Signal
+    acAmpLowerBound = filteredAcAmp - (acRange * AC_RANGE_MULTIPLIER);  // Lower bound is half channel width below AC Signal
+ 
     Serial.print(millis()); Serial.print(",");
     if (IR_AC_amplitude > IR_AC_MIN_AMP & IR_AC_amplitude < IR_AC_MAX_AMP)
     {
@@ -166,11 +159,7 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
     Serial.print(IR_AC_amplitude); Serial.print(",");
     Serial.print(acAmpLowerBound); Serial.print(",");
     Serial.print(filteredAcAmp); Serial.print(",");
-    Serial.print(acAmpUpperBound); Serial.print(",");
-    Serial.print(y02); Serial.print(",");
-    Serial.print(y03); Serial.print(",");
-    Serial.print(y05); Serial.print(",");
-    Serial.print(y06); Serial.println();
+    Serial.println(acAmpUpperBound); 
   }
 
   //  Detect negative zero crossing (falling edge)
