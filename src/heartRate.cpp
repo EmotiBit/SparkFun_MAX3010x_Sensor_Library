@@ -74,14 +74,12 @@ const double f_n = 2 * f_c / f_s;
 
 auto filter = butter<2>(f_n);  //< LPF to smooth output of respiration removed signal. The output of this filter is fed to the peak-detector
 DigitalFilter acSignalAmplitudeFilter(DigitalFilter::FilterType::IIR_LOWPASS, 10, 1); //< create normalized cutoff of 0.1. Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
-DigitalFilter acRangeFitler(DigitalFilter::FilterType::IIR_LOWPASS, 10, 5); //< create normalized cutoff of 0.1. Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
+DigitalFilter acRangeFitler(DigitalFilter::FilterType::IIR_LOWPASS, 10, 1); //< create normalized cutoff of 0.1. Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
 const float AC_RANGE_MULTIPLIER = 1.f/1.5;  // Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
 
 const int16_t IR_AC_MIN_AMP = 20;  // ABS MIN to consider it as a valid AC signal. EmotiBit with no finger usually presents AC noise in the 0-10 range
 const int16_t IR_AC_MAX_AMP = 10000;  // ABS MAX to consider it as a valid AC signal
 
-int16_t IR_AC_Max = 20;
-int16_t IR_AC_Min = -20;
 
 int16_t IR_AC_Signal_Current = 0;
 int16_t IR_AC_Signal_Previous;
@@ -119,24 +117,21 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
   iirFiltData = IR_AC_Signal_Current;
 
   //  Detect positive zero crossing (rising edge)
-  if ((IR_AC_Signal_Previous < 0) & (IR_AC_Signal_Current >= 0))
+  if ((IR_AC_Signal_Previous < 0) && (IR_AC_Signal_Current >= 0))
   {
    
-    IR_AC_Max = IR_AC_Signal_max; //Adjust our AC max and min
-    IR_AC_Min = IR_AC_Signal_min;
-
-    IR_AC_amplitude = IR_AC_Max - IR_AC_Min;
+    IR_AC_amplitude = IR_AC_Signal_max - IR_AC_Signal_min;
     positiveEdge = 1;
     negativeEdge = 0;
     IR_AC_Signal_max = 0;
     
     filteredAcAmp = acSignalAmplitudeFilter.filter(IR_AC_amplitude);
-    acRange = acRangeFitler.filter(filteredAcAmp);
+    acRange = acRangeFitler.filter(IR_AC_amplitude);
     acAmpUpperBound = filteredAcAmp + (acRange * AC_RANGE_MULTIPLIER);  // Upper bound is adjusted based on acRange and range multiplier
     acAmpLowerBound = filteredAcAmp - (acRange * AC_RANGE_MULTIPLIER);  // Lower bound is adjusted based on acRange and range multiplier
  
     Serial.print(millis()); Serial.print(",");
-    if (IR_AC_amplitude > IR_AC_MIN_AMP & IR_AC_amplitude < IR_AC_MAX_AMP)
+    if ((IR_AC_amplitude > IR_AC_MIN_AMP) && (IR_AC_amplitude < IR_AC_MAX_AMP))
     {
       // signal is within ABS bounds
       if(IR_AC_amplitude > acAmpLowerBound && IR_AC_amplitude < acAmpUpperBound)
@@ -163,7 +158,7 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
   }
 
   //  Detect negative zero crossing (falling edge)
-  if ((IR_AC_Signal_Previous > 0) & (IR_AC_Signal_Current <= 0))
+  if ((IR_AC_Signal_Previous > 0) && (IR_AC_Signal_Current <= 0))
   {
     positiveEdge = 0;
     negativeEdge = 1;
@@ -171,13 +166,13 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
   }
 
   //  Find Maximum value in positive cycle
-  if (positiveEdge & (IR_AC_Signal_Current > IR_AC_Signal_Previous))
+  if (positiveEdge && (IR_AC_Signal_Current > IR_AC_Signal_Previous))
   {
     IR_AC_Signal_max = IR_AC_Signal_Current;
   }
 
   //  Find Minimum value in negative cycle
-  if (negativeEdge & (IR_AC_Signal_Current < IR_AC_Signal_Previous))
+  if (negativeEdge && (IR_AC_Signal_Current < IR_AC_Signal_Previous))
   {
     IR_AC_Signal_min = IR_AC_Signal_Current;
   }
