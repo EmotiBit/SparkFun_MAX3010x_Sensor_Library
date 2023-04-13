@@ -94,8 +94,8 @@ int32_t ir_avg_reg = 0;
 
 int16_t filteredAcAmp;
 int16_t acRange;
-int16_t acAmpUpperBound;  // This scaling factor is chosen as it works reasonably well with test conditions
-int16_t acAmpLowerBound;  // This scaling factor is chosen as it works reasonably well with test conditions
+int16_t acAmpUpperBound;
+int16_t acAmpLowerBound;
 
 //  Heart Rate Monitor functions takes a sample value and the sample number
 //  Returns true if a beat is detected
@@ -130,31 +130,24 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
     acAmpUpperBound = filteredAcAmp + (acRange * AC_RANGE_MULTIPLIER);  // Upper bound is adjusted based on acRange and range multiplier
     acAmpLowerBound = filteredAcAmp - (acRange * AC_RANGE_MULTIPLIER);  // Lower bound is adjusted based on acRange and range multiplier
  
-    Serial.print(millis()); Serial.print(",");
     if ((IR_AC_amplitude > IR_AC_MIN_AMP) && (IR_AC_amplitude < IR_AC_MAX_AMP))
     {
       // signal is within ABS bounds
       if(IR_AC_amplitude > acAmpLowerBound && IR_AC_amplitude < acAmpUpperBound)
       {
         // signal is within the filtered signal bounds
-        Serial.print("BEAT DETECTED,");
         //Heart beat!!!
         beatDetected = true;
       }
       else
       {
-        Serial.print("NOT DETECTED (OOB),");
+        // Ac signal is out of permissible range. Do nothing.
       }
     }
     else
     {
-      Serial.print("NOT DETECTED (NOISE),");
+      // Ac signal is noise. Do nothing.
     }
-    // serial prints for testing/debugging
-    Serial.print(IR_AC_amplitude); Serial.print(",");
-    Serial.print(acAmpLowerBound); Serial.print(",");
-    Serial.print(filteredAcAmp); Serial.print(",");
-    Serial.println(acAmpUpperBound); 
   }
 
   //  Detect negative zero crossing (falling edge)
