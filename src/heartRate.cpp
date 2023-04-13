@@ -56,7 +56,7 @@
 */
 
 #include "heartRate.h"
-
+#include "DigitalFilter.h"
 #include <Filters.h>
 #include <Filters/Butterworth.hpp>
 
@@ -72,20 +72,30 @@ const double f_c = 3; // Hz
 // Normalized cut-off frequency
 const double f_n = 2 * f_c / f_s;
 
-auto filter = butter<2>(f_n);  // choosing a second order butterworth filter
+auto filter = butter<2>(f_n);  //< LPF to smooth output of respiration removed signal. The output of this filter is fed to the peak-detector
+DigitalFilter acSignalAmplitudeFilter(DigitalFilter::FilterType::IIR_LOWPASS, 10, 1); //< create normalized cutoff of 0.1. Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
+DigitalFilter acRangeFitler(DigitalFilter::FilterType::IIR_LOWPASS, 10, 1); //< create normalized cutoff of 0.1. Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
+const float AC_RANGE_MULTIPLIER = 1.f/1.5;  // Chosen based on testing and analysis in "Heartbeat Det AC Filter Calculator" testing sheet
 
-int16_t IR_AC_Max = 20;
-int16_t IR_AC_Min = -20;
+const int16_t IR_AC_MIN_AMP = 20;  // ABS MIN to consider it as a valid AC signal. EmotiBit with no finger usually presents AC noise in the 0-10 range
+const int16_t IR_AC_MAX_AMP = 10000;  // ABS MAX to consider it as a valid AC signal
+
 
 int16_t IR_AC_Signal_Current = 0;
 int16_t IR_AC_Signal_Previous;
 int16_t IR_AC_Signal_min = 0;
 int16_t IR_AC_Signal_max = 0;
 int16_t IR_Average_Estimated;
+int16_t IR_AC_amplitude;
 
 int16_t positiveEdge = 0;
 int16_t negativeEdge = 0;
 int32_t ir_avg_reg = 0;
+
+int16_t filteredAcAmp;
+int16_t acRange;
+int16_t acAmpUpperBound;
+int16_t acAmpLowerBound;
 
 //  Heart Rate Monitor functions takes a sample value and the sample number
 //  Returns true if a beat is detected
@@ -107,25 +117,41 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
   iirFiltData = IR_AC_Signal_Current;
 
   //  Detect positive zero crossing (rising edge)
-  if ((IR_AC_Signal_Previous < 0) & (IR_AC_Signal_Current >= 0))
+  if ((IR_AC_Signal_Previous < 0) && (IR_AC_Signal_Current >= 0))
   {
-  
-    IR_AC_Max = IR_AC_Signal_max; //Adjust our AC max and min
-    IR_AC_Min = IR_AC_Signal_min;
-
+   
+    IR_AC_amplitude = IR_AC_Signal_max - IR_AC_Signal_min;
     positiveEdge = 1;
     negativeEdge = 0;
     IR_AC_Signal_max = 0;
-
-    if ((IR_AC_Max - IR_AC_Min) > 20 & (IR_AC_Max - IR_AC_Min) < 2000)
+    
+    filteredAcAmp = acSignalAmplitudeFilter.filter(IR_AC_amplitude);
+    acRange = acRangeFitler.filter(IR_AC_amplitude);
+    acAmpUpperBound = filteredAcAmp + (acRange * AC_RANGE_MULTIPLIER);  // Upper bound is adjusted based on acRange and range multiplier
+    acAmpLowerBound = filteredAcAmp - (acRange * AC_RANGE_MULTIPLIER);  // Lower bound is adjusted based on acRange and range multiplier
+ 
+    if ((IR_AC_amplitude > IR_AC_MIN_AMP) && (IR_AC_amplitude < IR_AC_MAX_AMP))
     {
-      //Heart beat!!!
-      beatDetected = true;
+      // signal is within ABS bounds
+      if(IR_AC_amplitude > acAmpLowerBound && IR_AC_amplitude < acAmpUpperBound)
+      {
+        // signal is within the filtered signal bounds
+        //Heart beat!!!
+        beatDetected = true;
+      }
+      else
+      {
+        // Ac signal is out of permissible range. Do nothing.
+      }
+    }
+    else
+    {
+      // Ac signal is noise. Do nothing.
     }
   }
 
   //  Detect negative zero crossing (falling edge)
-  if ((IR_AC_Signal_Previous > 0) & (IR_AC_Signal_Current <= 0))
+  if ((IR_AC_Signal_Previous > 0) && (IR_AC_Signal_Current <= 0))
   {
     positiveEdge = 0;
     negativeEdge = 1;
@@ -133,13 +159,13 @@ bool checkForBeat(int32_t sample, int16_t &iirFiltData, bool dcRemoved)
   }
 
   //  Find Maximum value in positive cycle
-  if (positiveEdge & (IR_AC_Signal_Current > IR_AC_Signal_Previous))
+  if (positiveEdge && (IR_AC_Signal_Current > IR_AC_Signal_Previous))
   {
     IR_AC_Signal_max = IR_AC_Signal_Current;
   }
 
   //  Find Minimum value in negative cycle
-  if (negativeEdge & (IR_AC_Signal_Current < IR_AC_Signal_Previous))
+  if (negativeEdge && (IR_AC_Signal_Current < IR_AC_Signal_Previous))
   {
     IR_AC_Signal_min = IR_AC_Signal_Current;
   }
